@@ -66,8 +66,12 @@ export class OrganisationsService {
   }
 
   async createOrganisation(createOrganisationDto: CreateOrganisationType, userId: string) {
-    const query = await this.create(createOrganisationDto, userId);
-    return { status_code: HttpStatus.CREATED, messge: 'Organisation created', data: query };
+    try {
+      const query = await this.create(createOrganisationDto, userId);
+      return { status_code: HttpStatus.CREATED, message: 'Organisation created', data: query };
+    } catch (error) {
+      throw new InternalServerErrorException(`Internal server error: ${error.message}`);
+    }
   }
 
   async create(createOrganisationDto: CreateOrganisationType, userId: string) {
@@ -76,15 +80,20 @@ export class OrganisationsService {
       if (emailFound) throw new ConflictException('Organisation with this email already exists');
     }
 
-    const owner = await this.userRepository.findOne({
-      where: { id: userId },
-    });
+    const owner = await this.userRepository.findOne({ where: { id: userId } });
+    if (!owner) {
+      throw new NotFoundException('User not found');
+    }
 
     const vendorRole = await this.roleRepository.findOne({ where: { name: 'admin' } });
+    if (!vendorRole) {
+      throw new NotFoundException('Admin role not found');
+    }
 
     const organisationInstance = new Organisation();
     Object.assign(organisationInstance, createOrganisationDto);
     organisationInstance.owner = owner;
+
     const newOrganisation = await this.organisationRepository.save(organisationInstance);
 
     const adminRole = new OrganisationUserRole();

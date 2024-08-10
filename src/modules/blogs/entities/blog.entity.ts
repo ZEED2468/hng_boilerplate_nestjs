@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { AbstractBaseEntity } from '../../../entities/base.entity';
 import { User } from '../../user/entities/user.entity';
 
@@ -17,5 +17,6 @@ export class Blog extends AbstractBaseEntity {
   image_urls?: string[];
 
   @ManyToOne(() => User, user => user.blogs)
+  @JoinColumn({ name: 'author_id' })
   author: User;
 }
